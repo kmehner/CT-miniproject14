@@ -3,15 +3,18 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 from models import Movie as MovieModel, db
 from models import Genre as GenreModel
 from sqlalchemy.orm import Session
+from graphene import Int
 
 class Movie(SQLAlchemyObjectType):
     class Meta:
-        movie_model = MovieModel # This is mapping to the movie model in our models.py
+        # movie_model = MovieModel # This is mapping to the movie model in our models.py
+        model = MovieModel
         interfaces = (graphene.relay.Node,)
        
 class Genre(SQLAlchemyObjectType):
     class Meta:
-        genre_model = GenreModel
+        # genre_model = GenreModel
+        model = GenreModel
         interfaces = (graphene.relay.Node,) 
 
 class Query(graphene.ObjectType):
@@ -20,8 +23,10 @@ class Query(graphene.ObjectType):
 
     def resolve_movies(self, info): # Resolver
         return db.session.execute(db.select(MovieModel)).scalars()
+        # return MovieModel.query.all()
     def resolve_genres(self, info):
         return db.session.execute(db.select(GenreModel)).scalars()
+        # return GenreModel.query.all()
 
 
 class AddMovie(graphene.Mutation):
@@ -44,7 +49,7 @@ class AddMovie(graphene.Mutation):
 class AddGenre(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
-        movie_id = graphene.int(required=True)
+        movie_id = graphene.Int(required=True)
 
     genre = graphene.Field(Genre)
 
@@ -56,6 +61,24 @@ class AddGenre(graphene.Mutation):
             
             session.refresh(genre)
             return AddGenre(genre=genre)
+        
+# Optional change for AddGenre mutation
+# class AddGenre(graphene.Mutation):
+#     class Arguments:
+#         name = graphene.String(required=True)
+#         movie_id = graphene.Int(required=True)
+
+#     genre = graphene.Field(Genre)
+
+#     def mutate(self, info, name, movie_id):
+#         with Session(db.engine) as session:
+#             with session.begin():
+#                 genre = GenreModel(name=name, movie_id=movie_id)
+#                 session.add(genre)
+            
+#             session.refresh(genre)
+#             return AddGenre(genre=genre)
+
         
 class UpdateMovie(graphene.Mutation):
     class Arguments:
